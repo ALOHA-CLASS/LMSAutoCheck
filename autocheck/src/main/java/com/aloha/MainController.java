@@ -27,6 +27,7 @@ import com.aloha.domain.MainInfo;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
+import javafx.scene.control.Alert;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextArea;
@@ -38,10 +39,13 @@ public class MainController {
     private CheckBox cbSave;
 
     @FXML
-    private TextArea taEtc;
+    private TextArea taNote;
 
     @FXML
     private TextArea taOrder;
+
+    @FXML
+    private TextArea taEtc;
 
     @FXML
     private TextField tfA;
@@ -67,23 +71,38 @@ public class MainController {
     @FXML
     void initialize() {
         this.loadMainInfo();
+        String id = this.tfId.getText();
+        String pw = this.tfPw.getText();
+        String link = this.tfLink.getText();
+        boolean isChecked = this.cbSave.isSelected();
+        if( isChecked ) {
+          login(id, pw);
+        } 
     }
 
     @FXML
     void open(ActionEvent event) {
-        System.setProperty("webdriver.chrome.driver", "driver/chromedriver.exe");
-        String url = "https://tjoeun.atosoft.kr/worknet/TLogin.asp";
-        Main.driver.get(url);
+        
         String id = this.tfId.getText();
         String pw = this.tfPw.getText();
-        String link = this.tfLink.getText();
-        this.login(id, pw);
-        WebDriverWait wait = new WebDriverWait(Main.driver, Duration.ofSeconds(10L));
-        String targetUrl = "https://tjoeun.atosoft.kr/worknet/Course/CourseList.asp";
-        wait.until(ExpectedConditions.urlToBe(targetUrl));
-        System.out.println("로그인 완료!");
-        Main.driver.get(link);
-        wait.until(ExpectedConditions.urlToBe(link));
+        // String link = this.tfLink.getText();
+        // this.login(id, pw);
+        // WebDriverWait wait = new WebDriverWait(Main.driver, Duration.ofSeconds(10L));
+        // String targetUrl = "https://tjoeun.atosoft.kr/worknet/Course/CourseList.asp";
+        // wait.until(ExpectedConditions.urlToBe(targetUrl));
+        // System.out.println("로그인 완료!");
+
+        WebDriverWait wait = new WebDriverWait(Main.driver, Duration.ofSeconds(5L));
+        try {
+            String link = this.tfLink.getText();
+            Main.driver.get(link);
+            wait.until(ExpectedConditions.urlToBe(link));
+        } catch (Exception e) {
+            System.out.println("로그인이 되어있지 않습니다.");
+            login(id, pw);
+            open(event);
+        }
+
         System.out.println("훈련일지 들어옴!");
         WebElement diaryRegButton = Main.driver.findElement(By.xpath("//a[text()='훈련일지 등록']"));
         diaryRegButton.click();
@@ -96,8 +115,8 @@ public class MainController {
 
         try {
             Thread.sleep(1500L);
-        } catch (InterruptedException var19) {
-            var19.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         String 결석 = this.tfA.getText();
@@ -108,19 +127,20 @@ public class MainController {
         this.check조퇴(조퇴);
         this.init지시사항();
         this.init기타사항();
+        this.init출석노트();
 
         try {
             Thread.sleep(500L);
-        } catch (InterruptedException var18) {
-            var18.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         js.executeScript("check_submit();", new Object[0]);
 
         try {
             Thread.sleep(500L);
-        } catch (InterruptedException var17) {
-            var17.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         Actions actions = new Actions(Main.driver);
@@ -168,12 +188,29 @@ public class MainController {
     }
 
     void login(String id, String pw) {
+        System.setProperty("webdriver.chrome.driver", "driver/chromedriver.exe");
+        String url = "https://tjoeun.atosoft.kr/worknet/TLogin.asp";
+        Main.driver.get(url);
         WebElement loginId = Main.driver.findElement(By.id("strLoginID"));
         loginId.sendKeys(new CharSequence[]{id});
         WebElement loginPwd = Main.driver.findElement(By.id("strLoginPwd"));
         loginPwd.sendKeys(new CharSequence[]{pw});
         WebElement loginButton = Main.driver.findElement(By.xpath("//input[@type='submit']"));
         loginButton.click();
+        try {
+            WebDriverWait wait = new WebDriverWait(Main.driver, Duration.ofSeconds(5L));
+            String targetUrl = "https://tjoeun.atosoft.kr/worknet/Course/CourseList.asp";
+            wait.until(ExpectedConditions.urlToBe(targetUrl));
+        } catch (Exception e) {
+            boolean isChecked = this.cbSave.isSelected();
+            if( isChecked ) {
+                System.err.println("5초 안에 targetUrl에 도달하지 못했습니다.");
+                Alert alert = new Alert(Alert.AlertType.ERROR, "로그인에 실패했습니다. 다시 시도해주세요.");
+                alert.showAndWait();
+            }
+            return;
+        }
+        System.out.println("로그인 완료!");
     }
 
     void loadMainInfo() {
@@ -258,27 +295,26 @@ public class MainController {
       System.out.println("요소가 나타났습니다: " + String.valueOf(element));
    }
 
-   void init기타사항() {
+   String init출석노트() {
       String 결석 = this.tfA.getText();
       String 지각 = this.tfB.getText();
       String 조퇴 = this.tfC.getText();
+      결석 = 결석.isEmpty() ? "0" : (결석 + " (" + 결석.split(" ").length + ")" );
+      지각 = 지각.isEmpty() ? "0" : (지각 + " (" + 지각.split(" ").length + ")" );
+      조퇴 = 조퇴.isEmpty() ? "0" : (조퇴 + " (" + 조퇴.split(" ").length + ")" );
       System.out.println(결석);
       System.out.println(지각);
       System.out.println(조퇴);
       String pattern = "결석 : {0}\n지각 : {1}\n조퇴 : {2}";
       new MessageFormat(pattern);
       String result = MessageFormat.format(pattern, 결석, 지각, 조퇴);
-      System.out.println("[기타사항]");
-      System.out.println(result);
-      this.taEtc.setText(result);
-      WebElement element = Main.driver.findElement(By.name("strMatter4"));
-      if (element != null) {
-         element.sendKeys(new CharSequence[]{result});
-         System.out.println("값을 입력했습니다: " + result);
-      } else {
-         System.out.println("해당 요소를 찾을 수 없습니다.");
+      if( 결석.equals("0") && 지각.equals("0") && 조퇴.equals("0")) {
+         result = "올출";
       }
-
+      System.out.println("[출석노트]");
+      System.out.println(result);
+      this.taNote.setText(result);
+      return result;
    }
 
    void init지시사항() {
@@ -287,6 +323,23 @@ public class MainController {
       if (element != null) {
          element.sendKeys(new CharSequence[]{지시사항});
          System.out.println("값을 입력했습니다: " + 지시사항);
+      } else {
+         System.out.println("해당 요소를 찾을 수 없습니다.");
+      }
+   }
+
+
+   void init기타사항() {
+      String 기타사항 = this.taEtc.getText();
+      if( 기타사항.isEmpty() ) {
+        String etcNode = init출석노트();
+        기타사항 = etcNode;
+        taEtc.setText(기타사항);
+      }
+      WebElement element = Main.driver.findElement(By.name("strMatter4"));
+      if (element != null) {
+         element.sendKeys(new CharSequence[]{기타사항});
+         System.out.println("값을 입력했습니다: " + 기타사항);
       } else {
          System.out.println("해당 요소를 찾을 수 없습니다.");
       }
