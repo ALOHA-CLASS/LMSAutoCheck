@@ -6,10 +6,10 @@
     <version>1.0-SNAPSHOT</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>21</maven.compiler.source>
-        <maven.compiler.target>21</maven.compiler.target>
-        <jdk.version>21</jdk.version>
-        <javafx.version>23</javafx.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <jdk.version>17</jdk.version>
+        <javafx.version>21</javafx.version>
     </properties>
     <dependencies>
         <!-- JavaFX -->
@@ -36,7 +36,14 @@
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
             <artifactId>selenium-java</artifactId>
-            <version>4.18.1</version> <!-- 최신 버전 확인 권장 -->
+            <version>4.27.0</version> <!-- 최신 버전으로 업데이트 -->
+        </dependency>
+
+        <!-- Selenium DevTools (크롬 140 지원) -->
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-devtools-v130</artifactId>
+            <version>4.27.0</version>
         </dependency>
     </dependencies>
     <build>
@@ -47,7 +54,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <release>21</release>
+                    <release>17</release>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
