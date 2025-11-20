@@ -68,11 +68,22 @@ public class MainController {
         login(id, pw);
       } 
 
+      // ListView 널체크
+      if (lvStudentList == null) {
+        System.err.println("lvStudentList가 null입니다. FXML 파일의 fx:id를 확인해주세요.");
+        return;
+      }
       lvStudentList.getSelectionModel().setSelectionMode(javafx.scene.control.SelectionMode.MULTIPLE);
       lvStudentList.setOnMouseClicked(event -> {
           if (event.getClickCount() == 1) {
-            selectedStudents = String.join(" ", lvStudentList.getSelectionModel().getSelectedItems());
-            System.out.println("선택된 학생: " + selectedStudents);
+            
+            try {
+              selectedStudents = String.join(" ", lvStudentList.getSelectionModel().getSelectedItems());
+              System.out.println("선택된 학생: " + selectedStudents);
+            } catch (Exception e) {
+              System.err.println("학생 선택 중 오류 발생: " + e.getMessage());
+              e.printStackTrace();
+            }
           }
       });
     }
