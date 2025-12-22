@@ -1,3 +1,7 @@
+*.exe
+**/*.exe
+.tartget/**
+/autocheck/target/
 .vscode
 **/.vscode
 
