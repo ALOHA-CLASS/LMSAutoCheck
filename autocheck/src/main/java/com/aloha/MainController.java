@@ -373,13 +373,46 @@ public class MainController {
    }
 
    void selectCheckBoxes(String value, int index) {
-      WebDriverWait wait = new WebDriverWait(Main.driver, Duration.ofSeconds(10L));
-      List<WebElement> checkBoxes = wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.xpath("//input[@type='checkbox' and @value='" + value + "']")));
-      WebElement checkBox = (WebElement)checkBoxes.get(index);
-      if (!checkBox.isSelected()) {
-         checkBox.click();
+      try {
+         // 페이지가 완전히 로드될 때까지 추가 대기
+         Thread.sleep(10);
+         
+         WebDriverWait wait = new WebDriverWait(Main.driver, Duration.ofSeconds(15L));
+         
+         // 먼저 체크박스가 존재하는지 확인
+         List<WebElement> checkBoxes = Main.driver.findElements(By.xpath("//input[@type='checkbox' and @value='" + value + "']"));
+         
+         if (checkBoxes.isEmpty()) {
+            System.err.println("체크박스를 찾을 수 없습니다: " + value);
+            // 학생 이름이 포함된 td 요소를 찾아서 같은 행의 체크박스 찾기
+            try {
+               String xpath = "//td[contains(text(), '" + value + "')]/preceding-sibling::td//input[@type='checkbox'] | //td[contains(text(), '" + value + "')]/..//input[@type='checkbox']";
+               checkBoxes = Main.driver.findElements(By.xpath(xpath));
+               System.out.println("대체 방법으로 찾은 체크박스 개수: " + checkBoxes.size());
+            } catch (Exception e) {
+               System.err.println("대체 방법으로도 체크박스를 찾을 수 없습니다: " + e.getMessage());
+               return;
+            }
+         }
+         
+         if (checkBoxes.size() > index) {
+            WebElement checkBox = checkBoxes.get(index);
+            if (!checkBox.isSelected()) {
+               checkBox.click();
+               System.out.println("체크박스 선택 완료: " + value + " (index: " + index + ")");
+            } else {
+               System.out.println("이미 선택된 체크박스: " + value + " (index: " + index + ")");
+            }
+         } else {
+            System.err.println("체크박스 index가 범위를 벗어났습니다: " + value + " (요청 index: " + index + ", 실제 개수: " + checkBoxes.size() + ")");
+         }
+      } catch (InterruptedException e) {
+         System.err.println("Thread sleep 중 오류: " + e.getMessage());
+         e.printStackTrace();
+      } catch (Exception e) {
+         System.err.println("체크박스 선택 중 오류 발생: " + value + " - " + e.getMessage());
+         e.printStackTrace();
       }
-
    }
 
    void waitForInputElementWithValue(String value, WebDriverWait wait) {
@@ -394,10 +427,17 @@ public class MainController {
       System.out.println(결석);
       System.out.println(지각);
       System.out.println(조퇴);
+      
+      // 카운트 계산: 빈 문자열이거나 "0"이면 0명, 아니면 split 개수
+      int 결석카운트 = (결석.isEmpty() || 결석.equals("0")) ? 0 : 결석.split(" ").length;
+      int 지각카운트 = (지각.isEmpty() || 지각.equals("0")) ? 0 : 지각.split(" ").length;
+      int 조퇴카운트 = (조퇴.isEmpty() || 조퇴.equals("0")) ? 0 : 조퇴.split(" ").length;
+      
       String pattern = "결석({0}명) : {1}\n지각({2}명) : {3}\n조퇴({4}명) : {5}";
       new MessageFormat(pattern);
-      String result = MessageFormat.format(pattern, 결석.split(" ").length, 결석, 지각.split(" ").length, 지각, 조퇴.split(" ").length, 조퇴);
-      if( 결석.equals("0") && 지각.equals("0") && 조퇴.equals("0")) {
+      String result = MessageFormat.format(pattern, 결석카운트, 결석, 지각카운트, 지각, 조퇴카운트, 조퇴);
+      
+      if( 결석카운트 == 0 && 지각카운트 == 0 && 조퇴카운트 == 0) {
          result = "전원출석";
       }
       System.out.println("[출석노트]");
